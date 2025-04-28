@@ -1,11 +1,15 @@
 package org.eazyportal.plugin.release.core.action
 
+import org.eazyportal.plugin.release.core.action.model.ActionContext
+import org.eazyportal.plugin.release.core.project.model.Project
 import org.eazyportal.plugin.release.core.project.model.ProjectDescriptor
 import org.eazyportal.plugin.release.core.scm.ScmActions
+import org.eazyportal.plugin.release.core.version.model.Version
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class FinalizeReleaseVersionAction<T>(
+    private val actionContext: ActionContext,
     private val projectDescriptor: ProjectDescriptor<T>,
     private val scmActions: ScmActions<T>,
 ) : AbstractReleaseAction<T>(scmActions) {
@@ -15,12 +19,20 @@ class FinalizeReleaseVersionAction<T>(
 
         val releaseVersion = projectDescriptor.rootProject.projectActions.getVersion()
 
-        projectDescriptor.allProjects.forEach {
-            scmActions.add(it.dir, *it.projectActions.scmFilesToCommit())
-            scmActions.commit(it.dir, "Release version: $releaseVersion")
+        projectDescriptor.subProjects
+            .asSequence()
+            .filter { actionContext.isForceRelease || hasReleasableChanges(it) }
+            .forEach { commitReleaseVersion(it, releaseVersion) }
 
-            scmActions.tag(it.dir, releaseVersion)
-        }
+        // Have to include subproject changes in the root project commit
+        commitReleaseVersion(projectDescriptor.rootProject, releaseVersion)
+    }
+
+    private fun commitReleaseVersion(project: Project<T>, releaseVersion: Version) {
+        scmActions.add(project.dir, *project.projectActions.scmFilesToCommit())
+        scmActions.commit(project.dir, "$RELEASE_VERSION_COMMIT_PREFIX $releaseVersion")
+
+        scmActions.tag(project.dir, releaseVersion)
     }
 
     companion object {

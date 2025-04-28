@@ -35,11 +35,13 @@ class ReleaseActionFactory(
 
         return when (T::class) {
             FinalizeReleaseVersionAction::class -> FinalizeReleaseVersionAction(
+                actionContext,
                 projectDescriptor,
                 extension.scmActions
             )
 
             FinalizeSnapshotVersionAction::class -> FinalizeSnapshotVersionAction(
+                actionContext,
                 projectDescriptor,
                 extension.scmActions
             )
@@ -61,6 +63,7 @@ class ReleaseActionFactory(
             )
 
             SetSnapshotVersionAction::class -> SetSnapshotVersionAction(
+                actionContext,
                 projectDescriptor,
                 extension.scmActions,
                 extension.scmConfig,

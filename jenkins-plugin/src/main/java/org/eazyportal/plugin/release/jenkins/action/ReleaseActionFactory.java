@@ -47,11 +47,11 @@ public class ReleaseActionFactory extends InvisibleAction implements Serializabl
         ReleaseAction instance;
         if (FinalizeReleaseVersionAction.class.isAssignableFrom(clazz)) {
             instance = new FinalizeReleaseVersionAction<>(
-                projectDescriptor, scmActions
+                actionContext, projectDescriptor, scmActions
             );
         } else if (FinalizeSnapshotVersionAction.class.isAssignableFrom(clazz)) {
             instance = new FinalizeSnapshotVersionAction<>(
-                projectDescriptor, scmActions
+                actionContext, projectDescriptor, scmActions
             );
         } else if (PrepareRepositoryForReleaseAction.class.isAssignableFrom(clazz)) {
             instance = new PrepareRepositoryForReleaseAction<>(
@@ -64,7 +64,7 @@ public class ReleaseActionFactory extends InvisibleAction implements Serializabl
             );
         } else if (SetSnapshotVersionAction.class.isAssignableFrom(clazz)) {
             instance = new SetSnapshotVersionAction<>(
-                projectDescriptor, scmActions, releaseStepConfig.getScmConfig(),
+                actionContext, projectDescriptor, scmActions, releaseStepConfig.getScmConfig(),
                 new SnapshotVersionProvider()
             );
         } else if (UpdateScmAction.class.isAssignableFrom(clazz)) {

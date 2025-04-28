@@ -12,7 +12,7 @@ import org.junit.jupiter.api.TestMethodOrder
 import java.nio.file.Files
 
 @TestMethodOrder(value = OrderAnnotation::class)
-internal class GitFlowProjectWithGradleSubmodulesAcceptanceTest : BaseProjectAcceptanceTest() {
+class GitFlowProjectWithGradleSubmodulesAcceptanceTest : BaseProjectAcceptanceTest() {
 
     companion object {
         private const val SUBMODULE_PROJECT_NAME = "submodule-project"
@@ -426,6 +426,68 @@ internal class GitFlowProjectWithGradleSubmodulesAcceptanceTest : BaseProjectAcc
                 .run { assertThat(this).hasToString("0.2.2-SNAPSHOT") }
 
             assertThat(SCM_ACTIONS.getLastTag(projectDir)).isEqualTo("0.2.1")
+        }
+
+        listOf(PROJECT_DIR to ORIGIN_PROJECT_DIR, SUBMODULE_PROJECT_DIR to ORIGIN_SUBMODULE_PROJECT_DIR)
+            .forEach { it.verifyGitCommitsAndTags() }
+    }
+
+    @Order(30)
+    @Test
+    fun test_release_shouldNotReleaseSubproject_whenSubprojectDoesNotHaveAnyChanges() {
+        // GIVEN
+        PROJECT_DIR.copyIntoFromResources("src/main/java/org/eazyportal/plugin/release/test/dummy/config/DummyConfig.java", PROJECT_NAME)
+
+        // WHEN
+        SCM_ACTIONS.add(PROJECT_DIR, ".")
+        SCM_ACTIONS.commit(PROJECT_DIR, "feature: implement config")
+
+        // THEN
+        createGradleRunner(PROJECT_DIR, EazyReleasePlugin.RELEASE_TASK_NAME)
+            .build()
+
+        assertThat(GradleProjectActions(PROJECT_DIR).getVersion())
+            .hasToString("0.3.1-SNAPSHOT")
+        assertThat(SCM_ACTIONS.getCommits(PROJECT_DIR).first())
+            .isEqualTo("New SNAPSHOT version: 0.3.1-SNAPSHOT")
+        assertThat(SCM_ACTIONS.getLastTag(PROJECT_DIR))
+            .isEqualTo("0.3.0")
+
+        assertThat(GradleProjectActions(SUBMODULE_PROJECT_DIR).getVersion())
+            .hasToString("0.2.2-SNAPSHOT")
+        assertThat(SCM_ACTIONS.getCommits(SUBMODULE_PROJECT_DIR).first())
+            .isEqualTo("New SNAPSHOT version: 0.2.2-SNAPSHOT")
+        assertThat(SCM_ACTIONS.getLastTag(SUBMODULE_PROJECT_DIR))
+            .isEqualTo("0.2.1")
+
+        listOf(PROJECT_DIR to ORIGIN_PROJECT_DIR, SUBMODULE_PROJECT_DIR to ORIGIN_SUBMODULE_PROJECT_DIR)
+            .forEach { it.verifyGitCommitsAndTags() }
+    }
+
+    @Order(31)
+    @Test
+    fun test_release_shouldReleaseSubproject() {
+        // GIVEN
+        SUBMODULE_PROJECT_DIR.copyIntoFromResources(
+            "src/main/java/org/eazyportal/plugin/release/test/dummy/service/DefaultDummyService.java",
+            SUBMODULE_PROJECT_NAME
+        )
+
+        // WHEN
+        SCM_ACTIONS.add(SUBMODULE_PROJECT_DIR, ".")
+        SCM_ACTIONS.commit(SUBMODULE_PROJECT_DIR, "fix: add service implementation")
+
+        // THEN
+        createGradleRunner(PROJECT_DIR, EazyReleasePlugin.RELEASE_TASK_NAME)
+            .build()
+
+        ALL_PROJECT_DIRS.forEach {
+            assertThat(GradleProjectActions(it).getVersion())
+                .hasToString("0.3.2-SNAPSHOT")
+            assertThat(SCM_ACTIONS.getCommits(it).first())
+                .isEqualTo("New SNAPSHOT version: 0.3.2-SNAPSHOT")
+            assertThat(SCM_ACTIONS.getLastTag(it))
+                .isEqualTo("0.3.1")
         }
 
         listOf(PROJECT_DIR to ORIGIN_PROJECT_DIR, SUBMODULE_PROJECT_DIR to ORIGIN_SUBMODULE_PROJECT_DIR)

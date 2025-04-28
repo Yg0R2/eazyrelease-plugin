@@ -6,7 +6,6 @@ import org.eazyportal.plugin.release.core.project.model.ProjectDescriptor
 import org.eazyportal.plugin.release.core.project.model.ProjectFile
 import org.eazyportal.plugin.release.core.scm.ConventionalCommitType
 import org.eazyportal.plugin.release.core.scm.ScmActions
-import org.eazyportal.plugin.release.core.scm.exception.ScmActionException
 import org.eazyportal.plugin.release.core.scm.model.ScmConfig
 import org.eazyportal.plugin.release.core.version.ReleaseVersionProvider
 import org.eazyportal.plugin.release.core.version.VersionIncrementProvider
@@ -35,36 +34,50 @@ open class SetReleaseVersionAction<T>(
     override fun execute() {
         LOGGER.info("Setting release version...")
 
-        projectDescriptor.allProjects.run {
-            val releaseVersion = getReleaseVersion(this, actionContext.isForceRelease)
+        // Get the release version from the current branch
+        val releaseVersion = getReleaseVersion(projectDescriptor.allProjects)
 
-            forEach {
-                if (scmConfig.releaseBranch != scmConfig.featureBranch) {
-                    scmActions.checkout(it.dir, scmConfig.releaseBranch)
-
-                    scmActions.mergeNoCommit(it.dir, scmConfig.featureBranch)
-                }
+        projectDescriptor.subProjects
+            .asSequence()
+            .filter { actionContext.isForceRelease || hasReleasableChanges(it) }
+            .forEach {
+                checkoutToReleaseBranch(it)
 
                 it.projectActions.setVersion(releaseVersion)
             }
+
+        projectDescriptor.rootProject.run {
+            checkoutToReleaseBranch(this)
+
+            projectActions.setVersion(releaseVersion)
         }
     }
 
-    private fun getReleaseVersion(projects: List<Project<T>>, isForceRelease: Boolean): Version =
-        projects.mapNotNull {
-            val currentVersion = it.projectActions.getVersion()
-            val versionIncrement = getVersionIncrement(it.dir, isForceRelease)
+    private fun checkoutToReleaseBranch(project: Project<T>) {
+        if (scmConfig.releaseBranch != scmConfig.featureBranch) {
+            scmActions.checkout(project.dir, scmConfig.releaseBranch)
 
-            if ((versionIncrement == null) || (versionIncrement == NONE)) {
-                null
-            } else {
-                releaseVersionProvider.provide(currentVersion, versionIncrement)
-            }
+            scmActions.mergeNoCommit(project.dir, scmConfig.featureBranch)
         }
-        .maxWithOrNull(VersionComparator())
-        ?: throw IllegalArgumentException("There are no acceptable commits.")
+    }
 
-    private fun getVersionIncrement(projectDir: ProjectFile<T>, isForceRelease: Boolean): VersionIncrement? {
+    private fun getReleaseVersion(projects: List<Project<T>>): Version {
+        val (currentVersions, versionIncrements) = projects.map {
+            val currentVersion = it.projectActions.getVersion().also { version -> println("$it - $version") }
+            val versionIncrement = getVersionIncrement(it.dir).also { versionIncrement -> println("$it - $versionIncrement") }
+
+            currentVersion to versionIncrement
+        }.unzip()
+
+        val highestCurrentVersion = currentVersions.maxWith(VersionComparator())
+        val highestVersionIncrement = versionIncrements.filter { (it != null) && (it != NONE) }
+            .maxByOrNull { it!!.priority }
+            ?: throw IllegalArgumentException("There are no acceptable commits.")
+
+        return releaseVersionProvider.provide(highestCurrentVersion, highestVersionIncrement)
+    }
+
+    private fun getVersionIncrement(projectDir: ProjectFile<T>): VersionIncrement? {
         val lastTag = scmActions.getLastTag(projectDir)
             .also {
                 if (it == null) {
@@ -75,7 +88,7 @@ open class SetReleaseVersionAction<T>(
         val commitBasedVersionIncrement = scmActions.getCommits(projectDir, lastTag)
             .let { versionIncrementProvider.provide(it, conventionalCommitTypes) }
 
-        return if (isForceRelease && ((commitBasedVersionIncrement == null) || (commitBasedVersionIncrement == NONE))) {
+        return if (actionContext.isForceRelease && ((commitBasedVersionIncrement == null) || (commitBasedVersionIncrement == NONE))) {
             PATCH
         } else {
             commitBasedVersionIncrement

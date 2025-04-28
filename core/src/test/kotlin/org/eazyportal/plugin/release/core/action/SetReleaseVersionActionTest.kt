@@ -8,6 +8,7 @@ import org.eazyportal.plugin.release.core.project.ProjectActions
 import org.eazyportal.plugin.release.core.project.model.ProjectDescriptor
 import org.eazyportal.plugin.release.core.project.model.ProjectDescriptorMockBuilder
 import org.eazyportal.plugin.release.core.scm.ScmActions
+import org.eazyportal.plugin.release.core.scm.ScmFixtures.COMMITS
 import org.eazyportal.plugin.release.core.scm.model.ScmConfig
 import org.eazyportal.plugin.release.core.version.ReleaseVersionProvider
 import org.eazyportal.plugin.release.core.version.VersionIncrementProvider
@@ -30,7 +31,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
 
-internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
+class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
 
     @Mock
     private lateinit var releaseVersionProvider: ReleaseVersionProvider
@@ -80,23 +81,23 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         underTest.execute()
 
         projectDescriptor.subProjects.forEach {
-            verify(scmActions).getLastTag(it.dir)
-            verify(scmActions).getCommits(it.dir, null)
+            verify(scmActions, times(2)).getLastTag(it.dir)
+            verify(scmActions, times(2)).getCommits(it.dir, null)
         }
 
         verify(scmActions).getLastTag(projectDescriptor.rootProject.dir)
         verify(scmActions).getCommits(projectDescriptor.rootProject.dir, GIT_TAG)
 
-        verify(projectActions, times(2)).getVersion()
-        verify(versionIncrementProvider, times(2)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
+        verify(projectActions, times(projectDescriptor.allProjects.size)).getVersion()
+        verify(versionIncrementProvider, times(projectDescriptor.allProjects.size)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
 
         projectDescriptor.allProjects.forEach {
             verify(scmActions).checkout(it.dir, ScmConfig.GIT_FLOW.releaseBranch)
             verify(scmActions).mergeNoCommit(it.dir, ScmConfig.GIT_FLOW.featureBranch)
         }
 
-        verify(releaseVersionProvider, times(2)).provide(VersionFixtures.SNAPSHOT_001, VERSION_INCREMENT)
-        verify(projectActions, times(2)).setVersion(VersionFixtures.RELEASE_001)
+        verify(releaseVersionProvider).provide(VersionFixtures.SNAPSHOT_001, VERSION_INCREMENT)
+        verify(projectActions, times(projectDescriptor.allProjects.size)).setVersion(VersionFixtures.RELEASE_001)
 
         verifyNoMoreInteractions(projectActions, releaseVersionProvider, scmActions, versionIncrementProvider)
     }
@@ -133,18 +134,18 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         underTest.execute()
 
         projectDescriptor.subProjects.forEach {
-            verify(scmActions).getLastTag(it.dir)
-            verify(scmActions).getCommits(it.dir, null)
+            verify(scmActions, times(2)).getLastTag(it.dir)
+            verify(scmActions, times(2)).getCommits(it.dir, null)
         }
 
         verify(scmActions).getLastTag(projectDescriptor.rootProject.dir)
         verify(scmActions).getCommits(projectDescriptor.rootProject.dir, GIT_TAG)
 
-        verify(projectActions, times(2)).getVersion()
-        verify(versionIncrementProvider, times(2)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
+        verify(projectActions, times(projectDescriptor.allProjects.size)).getVersion()
+        verify(versionIncrementProvider, times(projectDescriptor.allProjects.size)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
 
-        verify(releaseVersionProvider, times(2)).provide(VersionFixtures.SNAPSHOT_001, VERSION_INCREMENT)
-        verify(projectActions, times(2)).setVersion(VersionFixtures.RELEASE_001)
+        verify(releaseVersionProvider).provide(VersionFixtures.SNAPSHOT_001, VERSION_INCREMENT)
+        verify(projectActions, times(projectDescriptor.allProjects.size)).setVersion(VersionFixtures.RELEASE_001)
 
         verifyNoMoreInteractions(projectActions, releaseVersionProvider, scmActions, versionIncrementProvider)
     }
@@ -172,8 +173,12 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         // WHEN
         whenever(projectActions.getVersion()).thenReturn(VersionFixtures.SNAPSHOT_001)
 
-        whenever(scmActions.getLastTag(any(), anyOrNull())).thenReturn(null)
-        whenever(scmActions.getCommits(any(), anyOrNull(), anyOrNull())).thenReturn(COMMITS)
+        projectDescriptor.subProjects.forEach {
+            whenever(scmActions.getLastTag(it.dir)).thenReturn(null)
+            whenever(scmActions.getCommits(it.dir, null)).thenReturn(COMMITS)
+        }
+        whenever(scmActions.getLastTag(projectDescriptor.rootProject.dir)).thenReturn(GIT_TAG)
+        whenever(scmActions.getCommits(projectDescriptor.rootProject.dir, GIT_TAG)).thenReturn(COMMITS)
 
         whenever(versionIncrementProvider.provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)).thenReturn(versionIncrement)
         whenever(releaseVersionProvider.provide(VersionFixtures.SNAPSHOT_001, expectedVersionIncrement))
@@ -182,17 +187,21 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         // THEN
         underTest.execute()
 
-        verify(scmActions, times(2)).getLastTag(any(), anyOrNull())
-        verify(scmActions, times(2)).getCommits(any(), anyOrNull(), anyOrNull())
+        projectDescriptor.subProjects.forEach {
+            verify(scmActions).getLastTag(it.dir)
+            verify(scmActions).getCommits(it.dir, null)
+        }
+        verify(scmActions).getLastTag(projectDescriptor.rootProject.dir)
+        verify(scmActions).getCommits(projectDescriptor.rootProject.dir, GIT_TAG)
 
-        verify(projectActions, times(2)).getVersion()
-        verify(versionIncrementProvider, times(2)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
+        verify(projectActions, times(projectDescriptor.allProjects.size)).getVersion()
+        verify(versionIncrementProvider, times(projectDescriptor.allProjects.size)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
 
-        verify(scmActions, times(2)).checkout(any(), anyOrNull())
-        verify(scmActions, times(2)).mergeNoCommit(any(), anyOrNull())
+        verify(scmActions, times(projectDescriptor.allProjects.size)).checkout(any(), anyOrNull())
+        verify(scmActions, times(projectDescriptor.allProjects.size)).mergeNoCommit(any(), anyOrNull())
 
-        verify(releaseVersionProvider, times(2)).provide(VersionFixtures.SNAPSHOT_001, expectedVersionIncrement)
-        verify(projectActions, times(2)).setVersion(VersionFixtures.RELEASE_001)
+        verify(releaseVersionProvider).provide(VersionFixtures.SNAPSHOT_001, expectedVersionIncrement)
+        verify(projectActions, times(projectDescriptor.allProjects.size)).setVersion(VersionFixtures.RELEASE_001)
 
         verifyNoMoreInteractions(projectActions, releaseVersionProvider, scmActions, versionIncrementProvider)
     }
@@ -209,8 +218,10 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
 
         // WHEN
         whenever(projectActions.getVersion()).thenReturn(VersionFixtures.SNAPSHOT_001)
-        whenever(scmActions.getLastTag(any(), anyOrNull())).thenReturn(null)
-        whenever(scmActions.getCommits(any(), anyOrNull(), anyOrNull())).thenReturn(COMMITS)
+        projectDescriptor.allProjects.forEach {
+            whenever(scmActions.getLastTag(it.dir)).thenReturn(null)
+            whenever(scmActions.getCommits(it.dir, null)).thenReturn(COMMITS)
+        }
         whenever(versionIncrementProvider.provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)).thenReturn(versionIncrement)
 
         // THEN
@@ -219,10 +230,12 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
             .hasMessage("There are no acceptable commits.")
 
         verifyNoInteractions(releaseVersionProvider)
-        verify(projectActions, times(2)).getVersion()
-        verify(scmActions, times(2)).getLastTag(any(), anyOrNull())
-        verify(scmActions, times(2)).getCommits(any(), anyOrNull(), anyOrNull())
-        verify(versionIncrementProvider, times(2)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
+        verify(projectActions, times(projectDescriptor.allProjects.size)).getVersion()
+        projectDescriptor.allProjects.forEach {
+            verify(scmActions).getLastTag(it.dir)
+            verify(scmActions).getCommits(it.dir, null)
+        }
+        verify(versionIncrementProvider, times(projectDescriptor.allProjects.size)).provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)
         verifyNoMoreInteractions(projectActions, scmActions, versionIncrementProvider)
     }
 
@@ -242,7 +255,6 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         )
 
     companion object {
-        private val COMMITS = listOf("fix: message", "test: message")
         private const val GIT_TAG = "0.0.0"
         private val VERSION_INCREMENT = VersionIncrement.PATCH
 
