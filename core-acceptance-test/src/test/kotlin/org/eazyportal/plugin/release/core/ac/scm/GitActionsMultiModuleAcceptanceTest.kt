@@ -53,8 +53,8 @@ internal class GitActionsMultiModuleAcceptanceTest : BaseMultiModuleAcceptanceTe
             assertThatThrownBy { underTest.getTags(it) }
                 .isInstanceOf(ScmActionException::class.java)
 
-            assertThatThrownBy { underTest.getLastTag(it) }
-                .isInstanceOf(ScmActionException::class.java)
+            assertThat(underTest.getLastTag(it))
+                .isNull()
         }
     }
 
@@ -551,8 +551,8 @@ internal class GitActionsMultiModuleAcceptanceTest : BaseMultiModuleAcceptanceTe
             assertThat(underTest.getTags(it))
                 .isEmpty()
 
-            assertThatThrownBy { underTest.getLastTag(it) }
-                .isInstanceOf(ScmActionException::class.java)
+            assertThat(underTest.getLastTag(it))
+                .isNull()
 
             underTest.tag(it, RELEASE_001)
 

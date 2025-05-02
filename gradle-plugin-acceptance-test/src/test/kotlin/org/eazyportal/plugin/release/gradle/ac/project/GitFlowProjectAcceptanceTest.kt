@@ -2,7 +2,6 @@ package org.eazyportal.plugin.release.gradle.ac.project
 
 import org.assertj.core.api.Assertions.assertThat
 import org.eazyportal.plugin.release.core.project.model.FileSystemProjectFile
-import org.eazyportal.plugin.release.core.scm.exception.ScmActionException
 import org.eazyportal.plugin.release.gradle.EazyReleasePlugin
 import org.eazyportal.plugin.release.gradle.project.GradleProjectActions
 import org.junit.jupiter.api.BeforeAll
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
-import org.junit.jupiter.api.assertThrows
 import java.io.File
 
 @TestMethodOrder(value = OrderAnnotation::class)
@@ -121,9 +119,8 @@ internal class GitFlowProjectAcceptanceTest : BaseProjectAcceptanceTest() {
         assertThat(SCM_ACTIONS.getCommits(PROJECT_DIR).first())
             .isEqualTo("initial commit")
 
-        assertThrows<ScmActionException> {
-            SCM_ACTIONS.getLastTag(PROJECT_DIR)
-        }
+        assertThat(SCM_ACTIONS.getLastTag(PROJECT_DIR))
+            .isNull()
 
         assertThat(GRADLE_PROJECT_ACTIONS.getVersion())
             .hasToString("0.1.0")
@@ -204,7 +201,8 @@ internal class GitFlowProjectAcceptanceTest : BaseProjectAcceptanceTest() {
             )
         }
         assertThat(SCM_ACTIONS.getCommits(PROJECT_DIR).first()).isEqualTo("feature: implement feature")
-        assertThrows<ScmActionException> { SCM_ACTIONS.getLastTag(PROJECT_DIR) }
+        assertThat(SCM_ACTIONS.getLastTag(PROJECT_DIR))
+            .isNull()
 
         assertThat(GRADLE_PROJECT_ACTIONS.getVersion()).hasToString("0.1.1-SNAPSHOT")
     }

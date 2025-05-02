@@ -2,7 +2,6 @@ package org.eazyportal.plugin.release.gradle.ac.project
 
 import org.assertj.core.api.Assertions.assertThat
 import org.eazyportal.plugin.release.core.project.model.FileSystemProjectFile
-import org.eazyportal.plugin.release.core.scm.exception.ScmActionException
 import org.eazyportal.plugin.release.gradle.EazyReleasePlugin
 import org.eazyportal.plugin.release.gradle.project.GradleProjectActions
 import org.junit.jupiter.api.BeforeAll
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
-import org.junit.jupiter.api.assertThrows
 import java.nio.file.Files
 
 @TestMethodOrder(value = OrderAnnotation::class)
@@ -153,7 +151,8 @@ internal class GitFlowProjectWithGradleSubmodulesAcceptanceTest : BaseProjectAcc
 
             assertThat(GradleProjectActions(projectDir).getVersion()).hasToString("0.1.0")
 
-            assertThrows<ScmActionException> { SCM_ACTIONS.getLastTag(projectDir) }
+            assertThat(SCM_ACTIONS.getLastTag(projectDir))
+                .isNull()
         }
     }
 
@@ -262,7 +261,8 @@ internal class GitFlowProjectWithGradleSubmodulesAcceptanceTest : BaseProjectAcc
         ALL_PROJECT_DIRS.forEach { projectDir ->
             assertThat(GradleProjectActions(projectDir).getVersion()).hasToString("0.1.1-SNAPSHOT")
 
-            assertThrows<ScmActionException> { SCM_ACTIONS.getLastTag(projectDir) }
+            assertThat(SCM_ACTIONS.getLastTag(projectDir))
+                .isNull()
         }
     }
 

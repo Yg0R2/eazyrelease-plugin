@@ -50,9 +50,13 @@ class GitActions<T>(
             .split(LINE_BREAK_REGEX)
     }
 
-    override fun getLastTag(projectFile: ProjectFile<T>, fromRef: String): String =
-        execute(projectFile, "describe", "--abbrev=0", "--tags", fromRef)
-            .trim()
+    override fun getLastTag(projectFile: ProjectFile<T>, fromRef: String): String? =
+        try  {
+            execute(projectFile, "describe", "--abbrev=0", "--tags", fromRef)
+                .trim()
+        } catch (_: Exception) {
+            null
+        }
 
     override fun getSubmodules(projectFile: ProjectFile<T>): List<String> {
         return execute(projectFile, "submodule")

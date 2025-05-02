@@ -65,14 +65,12 @@ open class SetReleaseVersionAction<T>(
         ?: throw IllegalArgumentException("There are no acceptable commits.")
 
     private fun getVersionIncrement(projectDir: ProjectFile<T>, isForceRelease: Boolean): VersionIncrement? {
-        val lastTag = try {
-            scmActions.getLastTag(projectDir)
-        }
-        catch (exception: ScmActionException) {
-            LOGGER.warn("Ignoring missing Git tag from release version calculation.")
-
-            null
-        }
+        val lastTag = scmActions.getLastTag(projectDir)
+            .also {
+                if (it == null) {
+                    LOGGER.warn("Ignoring missing Git tag from release version calculation.")
+                }
+            }
 
         val commitBasedVersionIncrement = scmActions.getCommits(projectDir, lastTag)
             .let { versionIncrementProvider.provide(it, conventionalCommitTypes) }

@@ -22,7 +22,7 @@ class StubScmActions(
 
     override fun getCommits(projectFile: ProjectFile<File>, fromRef: String?, toRef: String): List<String> = commits
 
-    override fun getLastTag(projectFile: ProjectFile<File>, fromRef: String): String = lastTag
+    override fun getLastTag(projectFile: ProjectFile<File>, fromRef: String): String? = lastTag
 
     override fun getSubmodules(projectFile: ProjectFile<File>): List<String> = submodules
 

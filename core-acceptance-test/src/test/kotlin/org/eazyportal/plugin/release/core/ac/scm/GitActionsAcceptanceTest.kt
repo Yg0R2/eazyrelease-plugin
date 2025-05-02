@@ -52,8 +52,8 @@ internal class GitActionsAcceptanceTest : BaseAcceptanceTest() {
         assertThatThrownBy { underTest.getTags(originProjectDir) }
             .isInstanceOf(ScmActionException::class.java)
 
-        assertThatThrownBy { underTest.getLastTag(originProjectDir) }
-            .isInstanceOf(ScmActionException::class.java)
+        assertThat(underTest.getLastTag(originProjectDir))
+            .isNull()
     }
 
     @Order(1)
@@ -301,8 +301,8 @@ internal class GitActionsAcceptanceTest : BaseAcceptanceTest() {
         assertThat(underTest.getTags(projectDir))
             .isEmpty()
 
-        assertThatThrownBy { underTest.getLastTag(projectDir) }
-            .isInstanceOf(ScmActionException::class.java)
+        assertThat(underTest.getLastTag(projectDir))
+            .isNull()
 
         underTest.tag(projectDir, RELEASE_001)
 

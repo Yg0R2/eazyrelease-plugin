@@ -203,6 +203,22 @@ internal class GitActionsTest {
     }
 
     @Test
+    fun test_getLastTag_shouldReturnNull_whenFailedToExecuteCommand() {
+        // GIVEN
+        // WHEN
+        whenever(commandExecutor.execute(projectFile, GIT_EXECUTABLE, "describe", "--abbrev=0", "--tags", "HEAD"))
+            .thenThrow(RuntimeException("fatal: No names found, cannot describe anything."))
+
+        // THEN
+        val actual = underTest.getLastTag(projectFile)
+
+        assertThat(actual).isNull()
+
+        verify(commandExecutor).execute(projectFile, GIT_EXECUTABLE, "describe", "--abbrev=0", "--tags", "HEAD")
+        verifyNoMoreInteractions(commandExecutor)
+    }
+
+    @Test
     fun test_getSubmodules() {
         // GIVEN
         val submodules = listOf("ui-project", "examples-project")

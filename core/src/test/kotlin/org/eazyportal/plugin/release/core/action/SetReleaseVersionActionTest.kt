@@ -8,7 +8,6 @@ import org.eazyportal.plugin.release.core.project.ProjectActions
 import org.eazyportal.plugin.release.core.project.model.ProjectDescriptor
 import org.eazyportal.plugin.release.core.project.model.ProjectDescriptorMockBuilder
 import org.eazyportal.plugin.release.core.scm.ScmActions
-import org.eazyportal.plugin.release.core.scm.exception.ScmActionException
 import org.eazyportal.plugin.release.core.scm.model.ScmConfig
 import org.eazyportal.plugin.release.core.version.ReleaseVersionProvider
 import org.eazyportal.plugin.release.core.version.VersionIncrementProvider
@@ -65,7 +64,7 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         whenever(projectActions.getVersion()).thenReturn(VersionFixtures.SNAPSHOT_001)
 
         projectDescriptor.subProjects.forEach {
-            whenever(scmActions.getLastTag(it.dir)).then { throw ScmActionException(null) }
+            whenever(scmActions.getLastTag(it.dir)).thenReturn(null)
             whenever(scmActions.getCommits(it.dir, null)).thenReturn(COMMITS)
         }
 
@@ -118,7 +117,7 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         whenever(projectActions.getVersion()).thenReturn(VersionFixtures.SNAPSHOT_001)
 
         projectDescriptor.subProjects.forEach {
-            whenever(scmActions.getLastTag(it.dir)).then { throw ScmActionException(null) }
+            whenever(scmActions.getLastTag(it.dir)).thenReturn(null)
             whenever(scmActions.getCommits(it.dir, null)).thenReturn(COMMITS)
         }
 
@@ -173,7 +172,7 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
         // WHEN
         whenever(projectActions.getVersion()).thenReturn(VersionFixtures.SNAPSHOT_001)
 
-        whenever(scmActions.getLastTag(any(), anyOrNull())).then { throw ScmActionException(RuntimeException()) }
+        whenever(scmActions.getLastTag(any(), anyOrNull())).thenReturn(null)
         whenever(scmActions.getCommits(any(), anyOrNull(), anyOrNull())).thenReturn(COMMITS)
 
         whenever(versionIncrementProvider.provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)).thenReturn(versionIncrement)
@@ -210,7 +209,7 @@ internal class SetReleaseVersionActionTest : ReleaseActionBaseTest() {
 
         // WHEN
         whenever(projectActions.getVersion()).thenReturn(VersionFixtures.SNAPSHOT_001)
-        whenever(scmActions.getLastTag(any(), anyOrNull())).then { throw ScmActionException(RuntimeException()) }
+        whenever(scmActions.getLastTag(any(), anyOrNull())).thenReturn(null)
         whenever(scmActions.getCommits(any(), anyOrNull(), anyOrNull())).thenReturn(COMMITS)
         whenever(versionIncrementProvider.provide(COMMITS, CONVENTIONAL_COMMIT_TYPES)).thenReturn(versionIncrement)
 
