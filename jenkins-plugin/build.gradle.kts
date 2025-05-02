@@ -70,6 +70,9 @@ dependencies {
                 } else if ((requested.group == "org.junit.platform") && (requested.name == "junit-platform-launcher")) {
                     useVersion("+")
                     because("fix: missing dependency version for jpiAllPlugins task")
+                } else if ((requested.group == "org.connectbot.jbcrypt") && requested.name == "jbcrypt") {
+                    useTarget("org.connectbot:jbcrypt:1.0.1")
+                    because("fix: relocated")
                 }
             }
         }

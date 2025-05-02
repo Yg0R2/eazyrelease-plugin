@@ -6,6 +6,17 @@ tasks.jar {
     isEnabled = false
 }
 
+allprojects {
+    repositories {
+        maven {
+            name = "Jenkins releases"
+            url = uri("https://repo.jenkins-ci.org/releases")
+        }
+
+        mavenCentral()
+    }
+}
+
 subprojects {
     if (name != "core-acceptance-test") {
         afterEvaluate {
