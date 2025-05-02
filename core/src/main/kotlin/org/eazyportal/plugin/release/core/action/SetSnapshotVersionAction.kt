@@ -12,7 +12,7 @@ class SetSnapshotVersionAction<T>(
     private val scmActions: ScmActions<T>,
     private val scmConfig: ScmConfig,
     private val snapshotVersionProvider: SnapshotVersionProvider
-) : ReleaseAction {
+) : AbstractReleaseAction<T>(scmActions) {
 
     private companion object {
         @JvmStatic

@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 class FinalizeReleaseVersionAction<T>(
     private val projectDescriptor: ProjectDescriptor<T>,
     private val scmActions: ScmActions<T>,
-) : ReleaseAction {
+) : AbstractReleaseAction<T>(scmActions) {
 
     override fun execute() {
         LOGGER.info("Finalize release version...")

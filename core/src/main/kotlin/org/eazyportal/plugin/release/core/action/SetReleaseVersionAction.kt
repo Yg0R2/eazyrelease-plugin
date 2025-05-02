@@ -25,7 +25,7 @@ open class SetReleaseVersionAction<T>(
     private val scmActions: ScmActions<T>,
     private val scmConfig: ScmConfig,
     private val versionIncrementProvider: VersionIncrementProvider
-) : ReleaseAction {
+) : AbstractReleaseAction<T>(scmActions) {
 
     companion object {
         @JvmStatic
